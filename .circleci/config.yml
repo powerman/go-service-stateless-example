@@ -42,6 +42,11 @@ jobs:
             - *setup_testing
             - run: ./build
             - run: ./test_integration
+            - run:
+                name: Report coverage
+                command: |
+                    go get -v github.com/mattn/goveralls
+                    goveralls -service=circle-ci
             - *setup_image
             - deploy:
                 name: Deploy to Docker Hub
