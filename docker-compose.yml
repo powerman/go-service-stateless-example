@@ -1,0 +1,33 @@
+version: "3.1"
+services:
+
+    example:
+        environment:
+            CONSUL_HTTP_ADDR: consul-agent:8500
+        build: .
+        image: "example:latest"
+        volumes:
+            - "log:/data"
+
+    consul-agent:
+        environment:
+            CONSUL_BIND_INTERFACE: eth0
+            CONSUL_ALLOW_PRIVILEGED_PORTS: 1
+        image: consul
+        command: ["agent", "-dev", "-client=0.0.0.0", "-dns-port=53", "-recursor=127.0.0.11", "-recursor=8.8.8.8"]
+        volumes:
+            - "consul:/consul/data"
+
+    nginx:
+        environment:
+            CONSUL_HOST: consul-agent
+        image: nginx:alpine
+        ports:
+            - "${EXAMPLE_PORT:-0}:80"
+        volumes:
+            - "./nginx/conf.d:/etc/nginx/conf.d:ro"
+        command: ["sh", "-c", "echo \"resolver $$(getent ahostsv4 $$CONSUL_HOST | head -n 1 | cut -f1 -d' ');\" >/etc/nginx/consul.conf; exec nginx -g 'daemon off;'"]
+
+volumes:
+    log:
+    consul:

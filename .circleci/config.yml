@@ -1,0 +1,81 @@
+# Snippets for jobs:
+jobs-references:
+    container_config: &container_config
+        working_directory: &working_directory /go/src/github.com/powerman/go-service-stateless-example
+        docker:
+            - image: cpdpro/baseimage:build-golang
+
+    setup_testing: &setup_testing
+            run:
+                name: Setup testing environment
+                command: |
+                    mkdir -p /data
+                    bash setup-volume true
+
+    setup_image: &setup_image
+            run:
+                name: Setup docker image name
+                command: |
+                    REPONAME="$(basename $PWD)" # no CIRCLE_PROJECT_REPONAME on local
+                    if test "$CIRCLE_BUILD_NUM"; then # not local
+                        IMAGE_TAG="powerman/$REPONAME:$CIRCLE_SHA1"
+                    else
+                        IMAGE_TAG="$REPONAME:latest"
+                    fi
+                    echo "export IMAGE_TAG=$IMAGE_TAG" >> $BASH_ENV
+
+version: 2
+jobs:
+    test:
+        <<: *container_config
+        steps:
+            - checkout
+            - setup_remote_docker
+            - *setup_testing
+            - run: ./build
+            - run: ./test_integration
+    build:
+        <<: *container_config
+        steps:
+            - checkout
+            - setup_remote_docker
+            - *setup_testing
+            - run: ./build
+            - run: ./test_integration
+            - *setup_image
+            - deploy:
+                name: Deploy to Docker Hub
+                command: |
+                    docker tag ${PWD##*/} $IMAGE_TAG
+                    docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
+                    docker push $IMAGE_TAG
+
+# Snippets for workflows:
+workflows-references:
+    filter_other: &filter_other
+                filters:
+                    branches:
+                        ignore:
+                            - master
+    filter_master: &filter_master
+                filters:
+                    branches:
+                        only: master
+
+workflows:
+    version: 2
+    test:
+        jobs:
+            - test:
+                <<: *filter_other
+    test_deploy:
+        jobs:
+            - build:
+                <<: *filter_master
+
+### Notify about every job in a workflow!
+experimental:
+    notify:
+        branches:
+            only:
+                - master

@@ -1,0 +1,4 @@
+#!/bin/sh
+# https://github.com/hashicorp/consul/issues/3754
+sv i .
+exit 0

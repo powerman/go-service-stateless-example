@@ -1,0 +1,11 @@
+#!/bin/bash
+set -x -e -o pipefail
+
+VOLUME_DIR=${PWD/$GOPATH//go}
+docker run -i -t --rm \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v $PWD:$VOLUME_DIR \
+	-e VOLUME_DIR=$VOLUME_DIR \
+	--workdir=$VOLUME_DIR \
+	cpdpro/baseimage:build-golang \
+	bash -c "./build && ./test_integration"

@@ -1,0 +1,20 @@
+#!/bin/bash
+set -x -e -o pipefail
+
+go get -v -t ./...
+
+libpkgs=$(go list -f '{{if ne .Name "main"}}{{.ImportPath}}{{end}}' ./...)
+cmdpkg=$(go list "$@" -f '{{if eq .Name "main"}}{{if ne (len .TestGoFiles) 0}}{{.ImportPath}}{{end}}{{end}}' ./... | head -n 1)
+coverpkg=$(echo $libpkgs $cmdpkg | sed 's/ /,/g')
+gotestcover -coverprofile cover.out -coverpkg $coverpkg -v "$@" ./...
+
+gometalinter \
+	--exclude 'error return value not checked \(log\w*\.Err\(' \
+	--exclude 'error return value not checked \(defer ' \
+	--exclude 'Errors unhandled.,LOW,HIGH' \
+	--exclude 'declaration of "log" shadows' \
+	--deadline 1m -t ./...
+
+go test -race "$@" ./...
+
+go tool cover -func cover.out

@@ -1,0 +1,8 @@
+#!/bin/sh
+exec 2>&1
+svcname=$(basename $(pwd))
+
+cd /app || exit 1
+
+echo $svcname is waiting for lock
+exec chpst -u app consul lock service/${svcname}/leader exec ${svcname}

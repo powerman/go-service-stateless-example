@@ -1,0 +1,17 @@
+FROM cpdpro/baseimage:build-golang
+
+ARG VOLUME_DIR
+ENV VOLUME_DIR=$VOLUME_DIR
+WORKDIR $VOLUME_DIR
+
+RUN set -x -e -o pipefail; \
+    ### Enable `go get` as user "app".
+    umask 0; \
+    ### Cache dependencies.
+    echo -n \
+	github.com/powerman/must                    \
+	| xargs -P 8 -l -d " " go get -v
+
+COPY . $VOLUME_DIR
+
+CMD ./test -tags=integration

@@ -1,0 +1,23 @@
+#!/bin/bash
+set -x -e -o pipefail
+
+EXIT=""
+trap 'set +x +e +o pipefail; eval "$EXIT" >/dev/null' EXIT
+
+PROJECT=$(echo ${PWD##*/}_${0##*/} | tr -cd '[:alnum:]')
+NETWORK=${PROJECT}_default
+
+docker-compose -p $PROJECT up -d
+EXIT="docker-compose -p $PROJECT down -v; $EXIT"
+EXIT="docker-compose -p $PROJECT kill; $EXIT" # speedup down
+
+IMAGE_TAG=${PWD##*/}:test
+VOLUME_DIR=${PWD/$GOPATH//go}
+docker build -t $IMAGE_TAG --build-arg=VOLUME_DIR=$VOLUME_DIR -f Dockerfile.test_integration .
+container=$(docker container create -i -t --network $NETWORK \
+	-e CONSUL_HTTP_ADDR=consul-agent:8500 \
+	$IMAGE_TAG)
+EXIT="docker container rm $container; $EXIT"
+docker container start -a $container
+
+docker cp $container:$VOLUME_DIR/cover.out cover.out

@@ -1,0 +1,42 @@
+image:
+    name: cpdpro/baseimage:build-golang
+    entrypoint: ["env"]
+
+variables:
+    IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+
+before_script:
+    - |
+        WD=$GOPATH/src/${CI_PROJECT_URL#*//}
+        mkdir -p ${WD%/*}
+        ln -s $CI_PROJECT_DIR $WD
+        cd $WD
+
+stages:
+    - build
+    - test
+    - release
+
+.tags: &tags
+    tags:
+        - docker
+
+build:
+    <<: *tags
+    stage: build
+    script: ./build
+
+test:
+    <<: *tags
+    stage: test
+    script: ./test_integration
+
+release:
+    <<: *tags
+    stage: release
+    only:
+        - master
+    script: |
+        docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+        docker tag ${PWD##*/} $IMAGE_TAG
+        docker push $IMAGE_TAG
