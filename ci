@@ -1,7 +1,7 @@
 #!/bin/bash
 set -x -e -o pipefail
 
-VOLUME_DIR=${PWD/$GOPATH//go}
+VOLUME_DIR=${PWD/$(go env GOPATH)//go}
 docker run -i -t --rm \
 	-v /var/run/docker.sock:/var/run/docker.sock \
 	-v $PWD:$VOLUME_DIR \

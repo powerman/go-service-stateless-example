@@ -7,7 +7,7 @@ variables:
 
 before_script:
     - |
-        WD=$GOPATH/src/${CI_PROJECT_URL#*//}
+        WD=$(go env GOPATH)/src/${CI_PROJECT_URL#*//}
         mkdir -p ${WD%/*}
         ln -s $CI_PROJECT_DIR $WD
         cd $WD

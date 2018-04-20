@@ -40,7 +40,6 @@ var (
 		ReadBufferSize:  bufsize,
 		WriteBufferSize: bufsize - 14, // subtract maxFrameHeaderSize:
 		// https://github.com/gorilla/websocket/blob/master/conn.go#L31
-		// https://github.com/gorilla/websocket/blob/master/conn.go#L31
 	}
 )
 

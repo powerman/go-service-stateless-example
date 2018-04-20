@@ -12,7 +12,7 @@ EXIT="docker-compose -p $PROJECT down -v; $EXIT"
 EXIT="docker-compose -p $PROJECT kill; $EXIT" # speedup down
 
 IMAGE_TAG=${PWD##*/}:test_integration
-VOLUME_DIR=${PWD/$GOPATH//go}
+VOLUME_DIR=${PWD/$(go env GOPATH)//go}
 docker build -t $IMAGE_TAG --build-arg=VOLUME_DIR=$VOLUME_DIR -f Dockerfile.test_integration .
 container=$(docker container create -i -t --network $NETWORK \
 	-e CONSUL_HTTP_ADDR=consul-agent:8500 \
